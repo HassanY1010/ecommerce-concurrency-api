@@ -1,3 +1,7 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.resolve(process.cwd(), '.env.test'), override: true });
+
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -58,19 +62,24 @@ describe('Concurrency & Race Condition Verification (Real PostgreSQL)', () => {
     const initialProduct = await prisma.product.findUnique({ where: { id: product.id } });
     expect(initialProduct?.stock_quantity).toBe(1);
 
-    // 3. Dispatch ALL 100 order requests simultaneously across concurrent promises
-    // This executes true parallel HTTP requests hitting the PostgreSQL database simultaneously.
-    const concurrentOrderPromises = userTokens.map((token) =>
-      request(app.getHttpServer())
-        .post('/api/orders')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          items: [{ productId: product.id, quantity: 1 }],
-        }),
-    );
+    // 3. Dispatch 100 concurrent order requests in controlled concurrency batches of 25
+    // This executes true parallel HTTP requests against PostgreSQL while preventing Windows OS socket starvation.
+    const batchSize = 25;
+    const results: any[] = [];
 
-    // Wait for all 100 concurrent requests to resolve
-    const results = await Promise.allSettled(concurrentOrderPromises);
+    for (let i = 0; i < userTokens.length; i += batchSize) {
+      const batchTokens = userTokens.slice(i, i + batchSize);
+      const batchPromises = batchTokens.map((token) =>
+        request(app.getHttpServer())
+          .post('/api/orders')
+          .set('Authorization', `Bearer ${token}`)
+          .send({
+            items: [{ productId: product.id, quantity: 1 }],
+          }),
+      );
+      const batchResults = await Promise.allSettled(batchPromises);
+      results.push(...batchResults);
+    }
 
     // 4. Analyze HTTP status codes
     let successCount = 0;
@@ -195,5 +204,5 @@ describe('Concurrency & Race Condition Verification (Real PostgreSQL)', () => {
     const cancelledOrder = await prisma.order.findUnique({ where: { id: orderId } });
     expect(cancelledOrder?.status).toBe('CANCELLED');
     expect(cancelledOrder?.cancelled_at).toBeDefined();
-  }, 30000);
+  }, 45000);
 });

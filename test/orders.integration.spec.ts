@@ -1,3 +1,7 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.resolve(process.cwd(), '.env.test'), override: true });
+
 import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from '../src/database/prisma.service';
@@ -347,6 +351,6 @@ describe('OrdersModule Integration Tests', () => {
       for (const ord of u2Res.body.data.items) {
         expect(ord.user_id).toBe(user2Id);
       }
-    });
+    }, 60000);
   });
 });

@@ -35,7 +35,7 @@ export class HealthController {
       throw new ServiceUnavailableException({
         status: 'error',
         timestamp: new Date().toISOString(),
-        error: error.message || 'Database connection error',
+        error: process.env.NODE_ENV === 'production' ? 'Database connection unavailable' : (error.message || 'Database connection error'),
       });
     }
   }

@@ -4,7 +4,9 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
+    const databaseUrl = process.env.DATABASE_URL;
     super({
+      datasources: databaseUrl ? { db: { url: databaseUrl } } : undefined,
       log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
     });
   }
@@ -24,6 +26,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     if (process.env.NODE_ENV === 'production') {
       throw new Error('cleanDatabase is strictly prohibited in production environment!');
     }
-    await this.$executeRawUnsafe('TRUNCATE TABLE "order_items", "orders", "products", "users" CASCADE;');
+    await this.$transaction([
+      this.orderItem.deleteMany(),
+      this.order.deleteMany(),
+      this.product.deleteMany(),
+      this.user.deleteMany(),
+    ]);
   }
 }

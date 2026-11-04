@@ -66,6 +66,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Never leak stack trace to the client in production or dev responses
+    const requestId = (request.headers['x-request-id'] as string) || undefined;
+
     response.status(status).json({
       success: false,
       statusCode: status,
@@ -73,6 +75,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message,
       timestamp: new Date().toISOString(),
       path: request.url,
+      requestId,
     });
   }
 }

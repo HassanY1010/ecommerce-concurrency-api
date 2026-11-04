@@ -1,6 +1,24 @@
 # E-Commerce High-Concurrency Backend API
 
+[![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)](https://ecommerce-concurrency-api-production.up.railway.app)
+[![Database](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
+[![Swagger Docs](https://img.shields.io/badge/API_Docs-Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://ecommerce-concurrency-api-production.up.railway.app/docs)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+
 A production-grade, highly resilient E-Commerce Backend REST API engineered with **NestJS**, **TypeScript**, and **PostgreSQL**. Built with strict adherence to ACID transactions, zero race-condition inventory control, atomic cancellation mechanisms, robust security measures, and end-to-end automated testing.
+
+---
+
+## 🌐 Live Production Deployments
+
+The application is deployed live in production and ready for review and automated testing:
+
+| Environment / Service | Live Endpoint | Status |
+| :--- | :--- | :--- |
+| **Interactive Swagger UI** | [`https://ecommerce-concurrency-api-production.up.railway.app/docs`](https://ecommerce-concurrency-api-production.up.railway.app/docs) | 🟢 Active |
+| **System Health & Readiness** | [`https://ecommerce-concurrency-api-production.up.railway.app/api/health`](https://ecommerce-concurrency-api-production.up.railway.app/api/health) | 🟢 200 OK |
+| **Products Catalog** | [`https://ecommerce-concurrency-api-production.up.railway.app/api/products`](https://ecommerce-concurrency-api-production.up.railway.app/api/products) | 🟢 Active |
+| **GitHub Repository** | [`https://github.com/HassanY1010/ecommerce-concurrency-api`](https://github.com/HassanY1010/ecommerce-concurrency-api) | 🟢 Main |
 
 ---
 
