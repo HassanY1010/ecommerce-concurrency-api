@@ -98,15 +98,18 @@ erDiagram
 1. **`users(email)` (Unique B-Tree Index)**:
    - يضمن عدم تكرار الحسابات.
    - يجعل فحص البريد عند تسجيل الدخول استعلاماً فائق السرعة بزمن \(O(\log N)\).
-2. **`products(name)` (B-Tree Index)**:
-   - يدعم البحث والفرز في كتالوج المنتجات.
-3. **`orders(user_id, created_at DESC)` (Composite B-Tree Index)**:
+2. **`products_name_trgm_idx` (GIN Trigram Index عبر `pg_trgm`)**:
+   - هذا هو الفهرس الفعلي المسؤول عن تسريع استعلامات البحث الجزئي غير الحساس لحالة الأحرف (`ILIKE '%search%'`).
+   - تنبيه هندسي معماري: فهارس B-tree التقليدية عاجزة فيزيائياً عن فهرسة البحث الذي يحتوي على Wildcard في البداية (Leading Wildcards مثل `%term%`) وتتحول حتماً في PostgreSQL إلى Full Table Scan مكلف. لذلك تم إنشاء وتفعيل إضافة `pg_trgm` وفهرس GIN Trigram مخصص ليحقق زمن استعلام لا يتعدى ميلي ثانية حتى مع ملايين المنتجات.
+3. **`products(name)` (Standard B-Tree Index)**:
+   - مخصص لعمليات المطابقة التامة (Exact Matches) والترتيب الأبجدي السريع (`ORDER BY name ASC`).
+4. **`orders(user_id, created_at DESC)` (Composite B-Tree Index)**:
    - هذا أهم فهرس مركب في النظام؛ لأنه يخدم استعلام المستخدم لعرض طلباته مع التصفح:
      `SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT 10 OFFSET 0`
    - وجود `created_at DESC` داخل الفهرس نفسه بجانب `user_id` يلغي الحاجة لعملية فرز مكلفة في الذاكرة (Avoids In-Memory Sort / Temp File Spilling).
-4. **`orders(status)`**:
+5. **`orders(status)`**:
    - يسرّع استعلامات العمليات والتقارير بحسب حالة الطلب.
-5. **`order_items(order_id)` و `order_items(product_id)`**:
+6. **`order_items(order_id)` و `order_items(product_id)`**:
    - تسريع عمليات الـ JOIN عند جلب عناصر الطلب وتدقيق مبيعات المنتج.
 
 ---

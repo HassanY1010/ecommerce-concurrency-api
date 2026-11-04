@@ -32,6 +32,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = res;
       }
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      this.logger.error(`Prisma Known Error [${exception.code}]: ${exception.message}`);
       // Prisma error code handling
       switch (exception.code) {
         case 'P2002': {

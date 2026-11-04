@@ -110,6 +110,65 @@ describe('OrdersModule Integration Tests', () => {
       const orderCount = await prisma.order.count();
       expect(orderCount).toBe(0);
     });
+
+    it('should handle duplicate products in the same order request by consolidating quantities', async () => {
+      const product = await prisma.product.create({
+        data: {
+          name: 'Dual Request Item',
+          price: 50.0,
+          stock_quantity: 10,
+        },
+      });
+
+      // User sends the same product ID twice (quantity 2 and quantity 3)
+      const res = await request(app.getHttpServer())
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          items: [
+            { productId: product.id, quantity: 2 },
+            { productId: product.id, quantity: 3 },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(Number(res.body.data.total_amount)).toBe(250.0);
+      expect(res.body.data.items.length).toBe(1);
+      expect(res.body.data.items[0].quantity).toBe(5);
+
+      // Verify stock deducted by 5
+      const p = await prisma.product.findUnique({ where: { id: product.id } });
+      expect(p?.stock_quantity).toBe(5);
+    });
+
+    it('should process multi-product orders atomically without deadlocks', async () => {
+      const p1 = await prisma.product.create({
+        data: { name: 'Item Alpha', price: 100.0, stock_quantity: 10 },
+      });
+      const p2 = await prisma.product.create({
+        data: { name: 'Item Beta', price: 200.0, stock_quantity: 10 },
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/api/orders')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .send({
+          items: [
+            { productId: p2.id, quantity: 1 },
+            { productId: p1.id, quantity: 2 },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(Number(res.body.total_amount || res.body.data.total_amount)).toBe(400.0);
+
+      const updatedP1 = await prisma.product.findUnique({ where: { id: p1.id } });
+      const updatedP2 = await prisma.product.findUnique({ where: { id: p2.id } });
+      expect(updatedP1?.stock_quantity).toBe(8);
+      expect(updatedP2?.stock_quantity).toBe(9);
+    });
   });
 
   describe('PATCH /api/orders/:id/cancel', () => {

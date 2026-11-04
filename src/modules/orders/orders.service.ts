@@ -136,7 +136,8 @@ export class OrdersService {
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-        timeout: 15000,
+        maxWait: 30000, // Allow up to 30s queue wait for transaction slot under high concurrency bursts
+        timeout: 30000,
       },
     );
   }
@@ -192,7 +193,10 @@ export class OrdersService {
           where: { order_id: orderId },
         });
 
-        for (const item of orderItems) {
+        // Sort items by product ID deterministically to prevent deadlocks across concurrent cancellations
+        const sortedItems = [...orderItems].sort((a, b) => a.product_id.localeCompare(b.product_id));
+
+        for (const item of sortedItems) {
           await tx.$queryRaw`
             UPDATE "products"
             SET "stock_quantity" = "stock_quantity" + ${item.quantity},
@@ -219,7 +223,8 @@ export class OrdersService {
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-        timeout: 10000,
+        maxWait: 20000,
+        timeout: 20000,
       },
     );
   }

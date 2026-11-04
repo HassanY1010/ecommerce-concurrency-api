@@ -164,10 +164,11 @@ CREATE TABLE "order_items" (
 ### Strategic Indexes
 
 1. **`users_email_key`** (`UNIQUE (email)`): Guarantees email uniqueness and facilitates O(1) authentication lookups.
-2. **`products_name_idx`** (`INDEX (name)`): Accelerates substring and full-text searches.
-3. **`orders_user_id_created_at_idx`** (`INDEX (user_id, created_at DESC)`): A composite index optimizing the most frequent customer query: viewing their own orders sorted newest-first with pagination.
-4. **`orders_status_idx`** (`INDEX (status)`): Speeds up operational queries by status (`PENDING`, `COMPLETED`, `CANCELLED`).
-5. **`order_items_order_id_idx`** & **`order_items_product_id_idx`**: Accelerates join performance for order detail fetching and cascading operations.
+2. **`products_name_trgm_idx`** (`CREATE INDEX ... USING gin (name gin_trgm_ops)`): Accelerates case-insensitive substring and pattern searches (`ILIKE '%search%'`) via PostgreSQL's `pg_trgm` extension. (Note: Standard B-tree indexes cannot index leading wildcards; hence GIN Trigram is the true production solution).
+3. **`products_name_idx`** (`INDEX (name)`): Standard B-tree index supporting exact equality lookups and alphabetical sorting.
+4. **`orders_user_id_created_at_idx`** (`INDEX (user_id, created_at DESC)`): A composite index optimizing the most frequent customer query: viewing their own orders sorted newest-first with pagination.
+5. **`orders_status_idx`** (`INDEX (status)`): Speeds up operational queries by status (`PENDING`, `COMPLETED`, `CANCELLED`).
+6. **`order_items_order_id_idx`** & **`order_items_product_id_idx`**: Accelerates join performance for order detail fetching and cascading operations.
 
 ---
 
