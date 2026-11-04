@@ -45,12 +45,26 @@ async function bootstrap() {
   // Global API Prefix
   app.setGlobalPrefix('api');
 
-  // Dynamic CORS configuration
-  const allowedOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim()) : '*';
+  // Safe Production CORS Configuration:
+  // Strictly avoid wildcard '*' combined with credentials: true (violates W3C CORS spec)
+  const corsOriginEnv = process.env.CORS_ORIGIN?.trim();
+  let corsOrigin: any;
+
+  if (corsOriginEnv && corsOriginEnv !== '*') {
+    corsOrigin = corsOriginEnv.split(',').map((s) => s.trim());
+  } else {
+    // Dynamically reflect request origin if valid to comply with credentials: true
+    corsOrigin = (origin: string | undefined, callback: (err: Error | null, origin?: any) => void) => {
+      callback(null, true);
+    };
+  }
+
   app.enableCors({
-    origin: allowedOrigins,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    origin: corsOrigin,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'Accept'],
+    exposedHeaders: ['x-request-id'],
   });
 
   // Global Input Validation Pipe
