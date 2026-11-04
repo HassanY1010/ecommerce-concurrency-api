@@ -34,11 +34,11 @@ ENV NODE_ENV=production
 # Install openssl and ca-certificates in runtime container
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Install only production dependencies
+# Install only production dependencies without running build scripts (Prisma client is copied from builder)
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Copy compiled artifacts and generated Prisma engines from builder
 COPY --from=builder /usr/src/app/dist ./dist
