@@ -46,21 +46,35 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Safe Production CORS Configuration:
-  // Strictly avoid wildcard '*' combined with credentials: true (violates W3C CORS spec)
-  const corsOriginEnv = process.env.CORS_ORIGIN?.trim();
-  let corsOrigin: any;
+  // Strictly enforce origin whitelist from CORS_ORIGIN environment variable
+  const rawCorsOrigins = process.env.CORS_ORIGIN?.trim();
+  const allowedOrigins: string[] = rawCorsOrigins
+    ? rawCorsOrigins.split(',').map((s) => s.trim()).filter(Boolean)
+    : [
+        'https://ecommerce-concurrency-api-production.up.railway.app',
+        'http://localhost:3000',
+        'http://localhost:5173',
+      ];
 
-  if (corsOriginEnv && corsOriginEnv !== '*') {
-    corsOrigin = corsOriginEnv.split(',').map((s) => s.trim());
-  } else {
-    // Dynamically reflect request origin if valid to comply with credentials: true
-    corsOrigin = (origin: string | undefined, callback: (err: Error | null, origin?: any) => void) => {
-      callback(null, true);
-    };
-  }
+  const corsOriginDelegate = (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void,
+  ) => {
+    // Allow non-browser requests (e.g. mobile apps, curl, Postman, server-to-server) where origin is undefined
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Explicitly reject unauthorized origins
+    return callback(new Error(`Origin '${origin}' is not allowed by CORS policy.`), false);
+  };
 
   app.enableCors({
-    origin: corsOrigin,
+    origin: corsOriginDelegate,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'Accept'],

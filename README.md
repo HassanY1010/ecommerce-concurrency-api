@@ -360,9 +360,9 @@ npm test -- test/concurrency.integration.spec.ts
 ```
 
 ### Test Suite Summary:
-- **Total Tests**: 20
-- **Suites**: 4
-- **Pass Rate**: 100% (20 passed, 0 failed)
+- **Total Tests**: 22
+- **Suites**: 4 (`auth`, `products`, `orders`, `concurrency`)
+- **Pass Rate**: 100% (22 passed, 0 failed)
 - **100 Concurrent Orders Test**: Verified (1 success, 99 failed, final stock = 0)
 - **20 Concurrent Cancellations Test**: Verified (1 success, 19 failed, stock restored once)
 
